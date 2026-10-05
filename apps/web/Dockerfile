@@ -23,9 +23,22 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
+RUN addgroup \
+        --system \
+        --gid 10001 \
+        localrag \
+    && adduser \
+        --system \
+        --uid 10001 \
+        --ingroup localrag \
+        --no-create-home \
+        localrag
+
+COPY --from=builder --chown=10001:10001 /app/public ./public
+COPY --from=builder --chown=10001:10001 /app/.next/standalone ./
+COPY --from=builder --chown=10001:10001 /app/.next/static ./.next/static
+
+USER 10001:10001
 
 EXPOSE 3000
 

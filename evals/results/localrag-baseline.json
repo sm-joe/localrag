@@ -1,7 +1,7 @@
 {
   "dataset": "LocalRAG Baseline Evaluation",
   "dataset_version": "2.0",
-  "timestamp": "2026-10-05T08:42:37.152164+00:00",
+  "timestamp": "2026-10-05T09:59:14.221374+00:00",
   "summary": {
     "total_cases": 5,
     "passed_cases": 5,
@@ -19,7 +19,7 @@
       "id": "rag-001",
       "question": "What does LocalRAG use for vector storage?",
       "expected_answer": "LocalRAG uses Qdrant for vector storage.",
-      "actual_answer": "According to the document context, LocalRAG uses Qdrant for vector storage [1].",
+      "actual_answer": "According to the retrieved document [1], LocalRAG uses Qdrant for vector storage.",
       "retrieval": {
         "expected_document_retrieved": true,
         "expected_document_rank": 1,
@@ -76,18 +76,18 @@
       "answer_passed": true,
       "passed": true,
       "performance": {
-        "embedding_ms": 114.69,
+        "embedding_ms": 114.88,
         "retrieval_ms": 125.11,
-        "prompt_build_ms": 0.02,
-        "llm_ms": 2784.61,
-        "total_ms": 2909.8
+        "prompt_build_ms": 0.04,
+        "llm_ms": 3729.45,
+        "total_ms": 3854.64
       }
     },
     {
       "id": "rag-002",
       "question": "What does RAG combine?",
       "expected_answer": "RAG combines document retrieval with a large language model.",
-      "actual_answer": "RAG combines document retrieval with a large language model, commonly referred to as RAG, combines document retrieval with a large language model [1].",
+      "actual_answer": "According to the retrieved document content, RAG combines document retrieval with a large language model, specifically retrieval augmented generation (RAG). The document states: \"Retrieval augmented generation, commonly called RAG, combines document retrieval with a large language model.\"\n\n[1] <retrieved_document source=\"1\">",
       "retrieval": {
         "expected_document_retrieved": true,
         "expected_document_rank": 1,
@@ -144,18 +144,18 @@
       "answer_passed": true,
       "passed": true,
       "performance": {
-        "embedding_ms": 103.46,
-        "retrieval_ms": 109.41,
-        "prompt_build_ms": 0.01,
-        "llm_ms": 2914.3,
-        "total_ms": 3023.76
+        "embedding_ms": 107.17,
+        "retrieval_ms": 115.21,
+        "prompt_build_ms": 0.05,
+        "llm_ms": 7270.02,
+        "total_ms": 7385.45
       }
     },
     {
       "id": "rag-003",
       "question": "How are documents processed before being stored in the vector database?",
       "expected_answer": "Documents are parsed, split into chunks, converted into embeddings, and stored in a vector database.",
-      "actual_answer": "According to the provided document context, documents are parsed, split into chunks, converted into embeddings, and stored in a vector database [1].",
+      "actual_answer": "According to the retrieved document, \"Filename: rag-filename-test.txt\" [1], documents are processed before being stored in the vector database as follows:\n\n1. Documents are parsed.\n2. Documents are split into chunks.\n3. The chunks are converted into embeddings.\n4. The embeddings are stored in a vector database.\n\nThese steps are based on the source text from the retrieved document [1].\n\n[1] <retrieved_document source=\"1\">",
       "retrieval": {
         "expected_document_retrieved": true,
         "expected_document_rank": 1,
@@ -224,18 +224,18 @@
       "answer_passed": true,
       "passed": true,
       "performance": {
-        "embedding_ms": 98.09,
-        "retrieval_ms": 102.93,
+        "embedding_ms": 125.56,
+        "retrieval_ms": 135.03,
         "prompt_build_ms": 0.01,
-        "llm_ms": 3124.29,
-        "total_ms": 3227.27
+        "llm_ms": 12595.82,
+        "total_ms": 12730.91
       }
     },
     {
       "id": "rag-004",
       "question": "What happens when a user asks a question?",
       "expected_answer": "The question is converted into an embedding and the vector database is searched for semantically relevant document chunks.",
-      "actual_answer": "When a user asks a question, the application converts the question into an embedding and searches the vector database for semantically relevant document chunks [1]. The retrieved chunks are then provided to the language model as context so that the model can generate an answer grounded in the user's documents.",
+      "actual_answer": "According to the retrieved document content [1], when a user asks a question, the application converts the question into an embedding and searches the vector database for semantically relevant document chunks. The retrieved chunks are then provided to the language model as context so that the model can generate an answer grounded in the user's documents.\n\nIn other words, the process involves the application searching the vector database for relevant document chunks based on the user's question, and then using those chunks as context to generate an answer through the language model.\n\n[1] <retrieved_document source=\"1\">",
       "retrieval": {
         "expected_document_retrieved": true,
         "expected_document_rank": 1,
@@ -298,18 +298,18 @@
       "answer_passed": true,
       "passed": true,
       "performance": {
-        "embedding_ms": 112.44,
-        "retrieval_ms": 122.9,
+        "embedding_ms": 159.53,
+        "retrieval_ms": 167.11,
         "prompt_build_ms": 0.01,
-        "llm_ms": 5223.7,
-        "total_ms": 5346.64
+        "llm_ms": 15049.87,
+        "total_ms": 15217.04
       }
     },
     {
       "id": "rag-005",
       "question": "What technologies does LocalRAG use?",
       "expected_answer": "LocalRAG uses FastAPI for the backend, Next.js for the user interface, Ollama for local models, and Qdrant for vector storage.",
-      "actual_answer": "LocalRAG uses the following technologies:\n\n- FastAPI for the backend [1]\n- Next.js for the user interface [1]\n- Ollama for local models [1]\n- Qdrant for vector storage [1]",
+      "actual_answer": "According to the retrieved document content, LocalRAG uses the following technologies:\n\n- FastAPI for the backend\n- Next.js for the user interface\n- Ollama for local models\n- Qdrant for vector storage\n\n[1] rag-filename-test.txt",
       "retrieval": {
         "expected_document_retrieved": true,
         "expected_document_rank": 1,
@@ -378,11 +378,11 @@
       "answer_passed": true,
       "passed": true,
       "performance": {
-        "embedding_ms": 93.86,
-        "retrieval_ms": 102.54,
+        "embedding_ms": 130.52,
+        "retrieval_ms": 143.09,
         "prompt_build_ms": 0.01,
-        "llm_ms": 4373.98,
-        "total_ms": 4476.57
+        "llm_ms": 8595.75,
+        "total_ms": 8738.89
       }
     }
   ]

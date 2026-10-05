@@ -12,7 +12,16 @@ services:
       LLM_MODEL: ${LLM_MODEL:-llama3.2:3b}
       EMBEDDING_MODEL: ${EMBEDDING_MODEL:-nomic-embed-text}
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    tmpfs:
+      - /tmp:rw,nosuid,nodev,size=64m
+    networks:
+      - frontend
+      - backend
     depends_on:
       qdrant:
         condition: service_healthy
@@ -25,7 +34,15 @@ services:
     container_name: localrag-web
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    tmpfs:
+      - /tmp:rw,nosuid,nodev,size=64m
+    networks:
+      - frontend
     depends_on:
       - api
 
@@ -33,11 +50,14 @@ services:
     image: qdrant/qdrant:v1.19.1
     container_name: localrag-qdrant
     restart: unless-stopped
-    ports:
-      - "6333:6333"
-      - "6334:6334"
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     volumes:
       - ./data/qdrant:/qdrant/storage
+    networks:
+      - backend
     healthcheck:
       test:
         - CMD-SHELL
@@ -51,7 +71,19 @@ services:
     image: ollama/ollama:latest
     container_name: localrag-ollama
     restart: unless-stopped
-    ports:
-      - "11434:11434"
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     volumes:
       - ./data/ollama:/root/.ollama
+    networks:
+      - backend
+
+networks:
+  frontend:
+    driver: bridge
+
+  backend:
+    driver: bridge
+    internal: true

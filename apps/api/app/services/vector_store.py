@@ -124,13 +124,8 @@ class VectorStore:
 
         payload = records[0].payload or {}
 
-        document_id = payload.get(
-            "document_id"
-        )
-
-        filename = payload.get(
-            "filename"
-        )
+        document_id = payload.get("document_id")
+        filename = payload.get("filename")
 
         if not document_id:
             return None
@@ -141,6 +136,42 @@ class VectorStore:
                 filename or "unknown"
             ),
         }
+
+    def find_points_by_filename(
+        self,
+        filename: str,
+        limit: int = 100,
+    ) -> list[Any]:
+        normalized_filename = filename.strip()
+
+        if not normalized_filename:
+            raise ValueError(
+                "Filename cannot be empty."
+            )
+
+        if limit <= 0:
+            raise ValueError(
+                "Limit must be greater than zero."
+            )
+
+        records, _ = self.client.scroll(
+            collection_name=self.collection_name,
+            scroll_filter=models.Filter(
+                must=[
+                    models.FieldCondition(
+                        key="filename",
+                        match=models.MatchValue(
+                            value=normalized_filename,
+                        ),
+                    )
+                ]
+            ),
+            limit=limit,
+            with_payload=True,
+            with_vectors=False,
+        )
+
+        return records
 
     def delete_document(
         self,

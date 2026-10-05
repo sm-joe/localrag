@@ -1,4 +1,5 @@
 import tempfile
+import zipfile
 from pathlib import Path
 
 from fastapi import APIRouter, File, HTTPException, UploadFile
@@ -39,6 +40,21 @@ class DocumentDeleteResponse(BaseModel):
     status: str
 
 
+ALLOWED_EXTENSIONS = {
+    ".pdf",
+    ".docx",
+    ".txt",
+    ".md",
+}
+
+MAX_UPLOAD_SIZE_BYTES = 10 * 1024 * 1024
+MAX_FILENAME_LENGTH = 255
+UPLOAD_READ_CHUNK_SIZE = 1024 * 1024
+
+PDF_MAGIC = b"%PDF-"
+ZIP_MAGIC = b"PK\x03\x04"
+
+
 def create_vector_store() -> VectorStore:
     settings = get_settings()
 
@@ -65,6 +81,165 @@ def create_ingestion_service() -> IngestionService:
     )
 
 
+def _sanitize_filename(filename: str) -> str:
+    normalized_filename = filename.replace("\\", "/")
+    sanitized_filename = Path(normalized_filename).name
+
+    if not sanitized_filename:
+        raise HTTPException(
+            status_code=400,
+            detail="Filename is required.",
+        )
+
+    if "\x00" in sanitized_filename:
+        raise HTTPException(
+            status_code=400,
+            detail="Filename contains invalid characters.",
+        )
+
+    if len(sanitized_filename) > MAX_FILENAME_LENGTH:
+        raise HTTPException(
+            status_code=400,
+            detail="Filename is too long.",
+        )
+
+    return sanitized_filename
+
+
+async def _write_upload_to_temporary_file(
+    file: UploadFile,
+    temporary_file,
+) -> int:
+    total_size = 0
+
+    while True:
+        chunk = await file.read(UPLOAD_READ_CHUNK_SIZE)
+
+        if not chunk:
+            break
+
+        total_size += len(chunk)
+
+        if total_size > MAX_UPLOAD_SIZE_BYTES:
+            raise HTTPException(
+                status_code=413,
+                detail=(
+                    "File is too large. "
+                    "Maximum upload size is 10 MiB."
+                ),
+            )
+
+        temporary_file.write(chunk)
+
+    return total_size
+
+
+def _validate_pdf(path: Path) -> None:
+    try:
+        with path.open("rb") as file:
+            header = file.read(len(PDF_MAGIC))
+
+    except OSError as exc:
+        raise HTTPException(
+            status_code=400,
+            detail="Uploaded PDF could not be read.",
+        ) from exc
+
+    if header != PDF_MAGIC:
+        raise HTTPException(
+            status_code=400,
+            detail="Uploaded file is not a valid PDF.",
+        )
+
+
+def _validate_docx(path: Path) -> None:
+    try:
+        with path.open("rb") as file:
+            header = file.read(len(ZIP_MAGIC))
+
+        if header != ZIP_MAGIC:
+            raise HTTPException(
+                status_code=400,
+                detail="Uploaded file is not a valid DOCX.",
+            )
+
+        with zipfile.ZipFile(path) as archive:
+            names = set(archive.namelist())
+
+            if "[Content_Types].xml" not in names:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Uploaded file is not a valid DOCX.",
+                )
+
+            if "word/document.xml" not in names:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Uploaded file is not a valid DOCX.",
+                )
+
+            if archive.testzip() is not None:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Uploaded DOCX archive is corrupted.",
+                )
+
+    except HTTPException:
+        raise
+
+    except (
+        OSError,
+        zipfile.BadZipFile,
+    ) as exc:
+        raise HTTPException(
+            status_code=400,
+            detail="Uploaded file is not a valid DOCX.",
+        ) from exc
+
+
+def _validate_text(path: Path) -> None:
+    try:
+        path.read_text(
+            encoding="utf-8",
+        )
+
+    except UnicodeDecodeError as exc:
+        raise HTTPException(
+            status_code=400,
+            detail="Uploaded text file is not valid UTF-8.",
+        ) from exc
+
+    except OSError as exc:
+        raise HTTPException(
+            status_code=400,
+            detail="Uploaded text file could not be read.",
+        ) from exc
+
+
+def _validate_file_content(
+    path: Path,
+    extension: str,
+) -> None:
+    if extension == ".pdf":
+        _validate_pdf(path)
+        return
+
+    if extension == ".docx":
+        _validate_docx(path)
+        return
+
+    if extension in {".txt", ".md"}:
+        _validate_text(path)
+        return
+
+    raise HTTPException(
+        status_code=400,
+        detail=(
+            f"Unsupported file type: {extension}"
+        ),
+    )
+
+
 @router.post(
     "/upload",
     response_model=DocumentUploadResponse,
@@ -78,22 +253,15 @@ async def upload_document(
             detail="Filename is required.",
         )
 
-    original_filename = Path(
+    original_filename = _sanitize_filename(
         file.filename
-    ).name
+    )
 
     extension = Path(
         original_filename
     ).suffix.lower()
 
-    allowed_extensions = {
-        ".pdf",
-        ".docx",
-        ".txt",
-        ".md",
-    }
-
-    if extension not in allowed_extensions:
+    if extension not in ALLOWED_EXTENSIONS:
         raise HTTPException(
             status_code=400,
             detail=(
@@ -112,9 +280,21 @@ async def upload_document(
                 temporary_file.name
             )
 
-            content = await file.read()
+            total_size = await _write_upload_to_temporary_file(
+                file=file,
+                temporary_file=temporary_file,
+            )
 
-            temporary_file.write(content)
+        if total_size == 0:
+            raise HTTPException(
+                status_code=400,
+                detail="Uploaded file is empty.",
+            )
+
+        _validate_file_content(
+            path=temporary_path,
+            extension=extension,
+        )
 
         service = create_ingestion_service()
 
@@ -138,6 +318,9 @@ async def upload_document(
             status=status,
         )
 
+    except HTTPException:
+        raise
+
     except ValueError as exc:
         raise HTTPException(
             status_code=400,
@@ -155,6 +338,8 @@ async def upload_document(
             temporary_path.unlink(
                 missing_ok=True
             )
+
+        await file.close()
 
 
 @router.get(

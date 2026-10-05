@@ -1,3 +1,4 @@
+import re
 from dataclasses import dataclass
 from time import perf_counter
 from typing import Any
@@ -46,6 +47,27 @@ class RetrievalResult:
 
 
 class RetrievalService:
+    SUPPORTED_FILENAME_EXTENSIONS = (
+        ".pdf",
+        ".docx",
+        ".txt",
+        ".md",
+    )
+
+    FILENAME_PATTERN = re.compile(
+        r"""
+        (?:
+            ["']([^"']+\.(?:pdf|docx|txt|md))
+            ["']
+        )
+        |
+        (?:
+            ([^\s"'<>]+\.(?:pdf|docx|txt|md))
+        )
+        """,
+        re.IGNORECASE | re.VERBOSE,
+    )
+
     def __init__(
         self,
         embedding_service: EmbeddingService,
@@ -93,6 +115,22 @@ class RetrievalService:
             )
 
         total_start = perf_counter()
+
+        explicit_filename = self._extract_filename(
+            normalized_query
+        )
+
+        if explicit_filename:
+            filename_result = (
+                self._retrieve_by_filename(
+                    filename=explicit_filename,
+                    limit=search_limit,
+                    total_start=total_start,
+                )
+            )
+
+            if filename_result is not None:
+                return filename_result
 
         embedding_start = perf_counter()
 
@@ -210,6 +248,149 @@ class RetrievalService:
             performance=performance,
         )
 
+    def _retrieve_by_filename(
+        self,
+        filename: str,
+        limit: int,
+        total_start: float,
+    ) -> RetrievalResult | None:
+        search_start = perf_counter()
+
+        records = (
+            self.vector_store.find_points_by_filename(
+                filename=filename,
+                limit=limit,
+            )
+        )
+
+        search_ms = (
+            perf_counter()
+            - search_start
+        ) * 1000
+
+        if not records:
+            return None
+
+        records.sort(
+            key=lambda record: int(
+                (record.payload or {}).get(
+                    "chunk_id",
+                    0,
+                )
+            )
+        )
+
+        retrieved_chunks: list[RetrievedChunk] = []
+        filtered_count = 0
+
+        for record in records[:limit]:
+            payload = record.payload or {}
+
+            chunk = self._build_chunk(
+                payload=payload,
+                score=1.0,
+            )
+
+            if chunk is None:
+                filtered_count += 1
+                continue
+
+            retrieved_chunks.append(chunk)
+
+        scores = [
+            chunk.score
+            for chunk in retrieved_chunks
+        ]
+
+        diagnostics = RetrievalDiagnostics(
+            requested_limit=limit,
+            candidate_count=len(records),
+            returned_count=len(
+                retrieved_chunks
+            ),
+            filtered_count=filtered_count,
+            top_candidate_score=(
+                1.0
+                if records
+                else None
+            ),
+            bottom_candidate_score=(
+                1.0
+                if records
+                else None
+            ),
+            top_score=(
+                max(scores)
+                if scores
+                else None
+            ),
+            bottom_score=(
+                min(scores)
+                if scores
+                else None
+            ),
+            has_context=bool(
+                retrieved_chunks
+            ),
+        )
+
+        performance = RetrievalPerformance(
+            embedding_ms=0.0,
+            search_ms=round(
+                search_ms,
+                2,
+            ),
+            total_ms=round(
+                (
+                    perf_counter()
+                    - total_start
+                )
+                * 1000,
+                2,
+            ),
+        )
+
+        return RetrievalResult(
+            chunks=retrieved_chunks,
+            diagnostics=diagnostics,
+            performance=performance,
+        )
+
+    @classmethod
+    def _extract_filename(
+        cls,
+        query: str,
+    ) -> str | None:
+        matches = cls.FILENAME_PATTERN.findall(
+            query
+        )
+
+        if not matches:
+            return None
+
+        for quoted, unquoted in matches:
+            filename = (
+                quoted.strip()
+                if quoted
+                else unquoted.strip()
+            )
+
+            if cls._is_supported_filename(
+                filename
+            ):
+                return filename
+
+        return None
+
+    @classmethod
+    def _is_supported_filename(
+        cls,
+        filename: str,
+    ) -> bool:
+        return filename.lower().endswith(
+            cls.SUPPORTED_FILENAME_EXTENSIONS
+        )
+
     @staticmethod
     def _build_chunk(
         payload: dict[str, Any],
@@ -225,7 +406,9 @@ class RetrievalService:
             "end_char",
         }
 
-        if not required_fields.issubset(payload):
+        if not required_fields.issubset(
+            payload
+        ):
             return None
 
         return RetrievedChunk(
