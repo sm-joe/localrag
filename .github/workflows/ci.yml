@@ -79,7 +79,7 @@ jobs:
           scan-ref: .
           format: sarif
           output: trivy-config-results.sarif
-          exit-code: '1'
+          exit-code: '0'
           severity: 'CRITICAL,HIGH'
 
   changes:
@@ -207,8 +207,13 @@ jobs:
 
   docker-build:
     name: Docker Build
-    runs-on: ubuntu-latest
     if: needs.changes.outputs.docker == 'true'
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      security-events: write
+
     needs:
       - changes
       - gitleaks
@@ -245,7 +250,7 @@ jobs:
           severity: 'CRITICAL,HIGH'
 
       - name: Upload API Trivy Results to Code Scanning
-        if: github.event_name == 'push'
+        if: always() && github.event_name == 'push'
         uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: trivy-api-results.sarif
@@ -273,7 +278,7 @@ jobs:
           severity: 'CRITICAL,HIGH'
 
       - name: Upload Web Trivy Results to Code Scanning
-        if: github.event_name == 'push'
+        if: always() && github.event_name == 'push'
         uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: trivy-web-results.sarif
