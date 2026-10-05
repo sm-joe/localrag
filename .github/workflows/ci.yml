@@ -75,12 +75,12 @@ jobs:
               -f docker-compose.yml \
               -f .github/ci-compose.yml \
               exec -T ollama \
-              sh -c 'wget -q -O /dev/null http://127.0.0.1:11434/api/tags'; then
-              echo "Ollama API is ready"
+              ollama list >/dev/null 2>&1; then
+              echo "Ollama is ready"
               break
             fi
 
-            echo "Ollama API not ready yet ($i/60)"
+            echo "Ollama not ready yet ($i/60)"
 
             if [ "$i" -eq 60 ]; then
               echo "Ollama failed to become ready"
