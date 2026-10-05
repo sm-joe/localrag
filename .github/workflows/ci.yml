@@ -233,7 +233,7 @@ jobs:
         with:
           context: ./apps/api
           file: ./apps/api/Dockerfile
-          push: false
+          load: true
           tags: localrag-api:ci
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -261,7 +261,7 @@ jobs:
         with:
           context: ./apps/web
           file: ./apps/web/Dockerfile
-          push: false
+          load: true
           tags: localrag-web:ci
           cache-from: type=gha
           cache-to: type=gha,mode=max
