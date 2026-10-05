@@ -43,6 +43,8 @@ jobs:
 
       - name: Run API tests
         working-directory: apps/api
+        env:
+          PYTHONPATH: ${{ github.workspace }}/apps/api
         run: pytest -q
 
   web-build:
@@ -75,7 +77,6 @@ jobs:
   docker-build:
     name: Docker Build
     runs-on: ubuntu-latest
-
     needs:
       - api-tests
       - web-build
