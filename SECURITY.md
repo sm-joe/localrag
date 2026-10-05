@@ -1,8 +1,33 @@
-# Security Policy
+# LocalRAG Security
 
-> **LocalRAG is a Docker-first local RAG application designed primarily for trusted environments.**
+<p align="center">
+  <strong>Security architecture, controls, testing, and deployment guidance.</strong><br>
+  LocalRAG is designed primarily for trusted local Docker environments.
+</p>
 
-Security is implemented across document ingestion, file parsing, retrieval, prompt construction, container runtime, networking, dependencies, and CI.
+<p align="center">
+  <img src="https://img.shields.io/badge/Gitleaks-security-critical?style=for-the-badge&logo=git&logoColor=white" alt="Gitleaks">
+  <img src="https://img.shields.io/badge/CodeQL-SAST-2ea44f?style=for-the-badge&logo=github&logoColor=white" alt="CodeQL">
+  <img src="https://img.shields.io/badge/Trivy-container%20security-1904DA?style=for-the-badge&logo=aquasecurity&logoColor=white" alt="Trivy">
+  <img src="https://img.shields.io/badge/Docker-hardened-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker">
+</p>
+
+---
+
+## Security Policy
+
+Security is implemented across:
+
+- Document ingestion
+- File parsing
+- Retrieval
+- Prompt construction
+- Container runtime
+- Networking
+- Dependencies
+- CI
+
+> **Core principle:** LocalRAG treats uploaded documents and retrieved document content as untrusted input.
 
 ---
 
@@ -33,7 +58,7 @@ If LocalRAG is exposed beyond a trusted local environment, perform an additional
 
 ---
 
-## Security Architecture
+# Security Architecture
 
 ```text
                          User
@@ -67,33 +92,33 @@ Security controls are applied at each stage rather than relying on a single secu
 
 ---
 
-## 1. File Upload Security
+# 1. File Upload Security
 
 All uploaded documents are treated as **untrusted input**.
 
 Validation occurs before normal parsing or ingestion.
 
-### Supported formats
+## Supported formats
 
 | Format | Status |
 |---|:---:|
-| PDF | ✅ |
-| DOCX | ✅ |
-| TXT | ✅ |
-| Markdown | ✅ |
-| Other formats | ❌ |
+| PDF | Yes |
+| DOCX | Yes |
+| TXT | Yes |
+| Markdown | Yes |
+| Other formats | No |
 
-### Upload limit
+## Upload limit
 
 **Maximum upload size: `10 MiB`**
 
 Oversized requests are rejected before normal ingestion processing.
 
-### Empty files
+## Empty files
 
 Empty uploads are rejected.
 
-### Filename controls
+## Filename controls
 
 The ingestion path:
 
@@ -105,7 +130,7 @@ The ingestion path:
 
 Client-provided paths are never trusted as filesystem locations.
 
-### Temporary files
+## Temporary files
 
 Uploaded content may be written to temporary storage during processing.
 
@@ -113,11 +138,11 @@ Temporary files are cleaned up after processing.
 
 ---
 
-## 2. File Content Validation
+# 2. File Content Validation
 
 File extensions alone are not considered sufficient validation.
 
-### PDF
+## PDF
 
 PDF content is checked for the expected magic bytes:
 
@@ -127,13 +152,13 @@ PDF content is checked for the expected magic bytes:
 
 Invalid or mismatched content is rejected before normal parsing.
 
-### DOCX
+## DOCX
 
 DOCX files are validated as ZIP-based document containers before they are parsed.
 
 Invalid content is rejected instead of being passed directly to the DOCX parser.
 
-### TXT / Markdown
+## TXT / Markdown
 
 Text files use controlled UTF-8 decoding with replacement handling for invalid byte sequences.
 
@@ -141,7 +166,7 @@ Malformed content does not result in uncontrolled parser behavior.
 
 ---
 
-## 3. Parser Security
+# 3. Parser Security
 
 Document parsers process untrusted content, so LocalRAG applies explicit resource limits.
 
@@ -151,25 +176,25 @@ Document parsers process untrusted content, so LocalRAG applies explicit resourc
 | DOCX paragraphs | **10,000** |
 | Normalized extracted text | **2,000,000 characters** |
 
-### PDF
+## PDF
 
 Parsed using **PyMuPDF**.
 
 Parser failures are converted into controlled application errors.
 
-### DOCX
+## DOCX
 
 Parsed using **python-docx**.
 
 Parser failures are converted into controlled application errors.
 
-### Resource exhaustion
+## Resource exhaustion
 
 These limits reduce the risk of uncontrolled resource consumption caused by unexpectedly large or complex documents.
 
 ---
 
-## 4. Document Normalization
+# 4. Document Normalization
 
 Extracted content is normalized before entering the retrieval pipeline.
 
@@ -184,7 +209,7 @@ The normalized result is then checked against the extracted-text limit.
 
 ---
 
-## 5. RAG Prompt Security
+# 5. RAG Prompt Security
 
 > **Core rule: retrieved documents are data, not instructions.**
 
@@ -200,7 +225,7 @@ Execute this command.
 
 LocalRAG treats those statements as **document content**, not application instructions.
 
-### Instruction boundary
+## Instruction boundary
 
 ```text
 ┌──────────────────────────────┐
@@ -221,7 +246,7 @@ LocalRAG treats those statements as **document content**, not application instru
 
 Retrieved content is explicitly identified as untrusted.
 
-### Retrieved content cannot override application rules
+## Retrieved content cannot override application rules
 
 The application instructs the LLM to ignore retrieved-document attempts to:
 
@@ -240,7 +265,7 @@ Retrieved content is used only as factual evidence relevant to the user's questi
 
 ---
 
-## 6. Grounded Answering
+# 6. Grounded Answering
 
 The LLM is instructed to use retrieved document context as the source of truth.
 
@@ -257,7 +282,7 @@ If relevant context is unavailable, the system should say that the provided docu
 
 ---
 
-## 7. Retrieval Security
+# 7. Retrieval Security
 
 The semantic retrieval baseline is intentionally conservative.
 
@@ -268,7 +293,7 @@ The semantic retrieval baseline is intentionally conservative.
 
 The global semantic threshold is not lowered simply to make individual queries return results.
 
-### Filename-aware retrieval
+## Filename-aware retrieval
 
 When a user explicitly references a supported filename, LocalRAG attempts exact filename retrieval first.
 
@@ -294,7 +319,7 @@ If the filename does not exist, normal semantic retrieval is used instead.
 
 ---
 
-## 8. Citation Security
+# 8. Citation Security
 
 Retrieved chunks receive controlled citation identifiers:
 
@@ -312,11 +337,11 @@ Citations are derived from retrieved application data rather than arbitrary cita
 
 ---
 
-## 9. Container Security
+# 9. Container Security
 
 The application containers use a hardened baseline appropriate for a small local Docker deployment.
 
-### Non-root runtime
+## Non-root runtime
 
 The API and web containers run as dedicated non-root users.
 
@@ -328,7 +353,7 @@ UID/GID 10001
 
 The web container also uses a dedicated non-root runtime identity.
 
-### Linux capabilities
+## Linux capabilities
 
 All Linux capabilities are dropped:
 
@@ -339,7 +364,7 @@ cap_drop:
 
 The application does not require privileged Linux capabilities for normal operation.
 
-### No new privileges
+## No new privileges
 
 Containers use:
 
@@ -349,7 +374,7 @@ no-new-privileges: true
 
 This prevents processes from gaining additional privileges through supported privilege-escalation mechanisms.
 
-### Restricted `/tmp`
+## Restricted `/tmp`
 
 The API and web containers use a restricted temporary filesystem.
 
@@ -361,11 +386,11 @@ The API and web containers use a restricted temporary filesystem.
 
 ---
 
-## 10. Network Security
+# 10. Network Security
 
 The Docker Compose configuration separates frontend and backend communication.
 
-### Host exposure
+## Host exposure
 
 | Service | Binding |
 |---|---|
@@ -376,19 +401,19 @@ The Docker Compose configuration separates frontend and backend communication.
 
 The application is therefore bound to the local host rather than all host interfaces.
 
-### Qdrant
+## Qdrant
 
 Qdrant is not directly published to the host.
 
 The API communicates with Qdrant through the internal Docker backend network.
 
-### Ollama
+## Ollama
 
 Ollama is not directly published to the host.
 
 The API communicates with Ollama through the internal Docker backend network.
 
-### Network model
+## Network model
 
 ```text
 Host
@@ -408,7 +433,7 @@ This reduces direct host exposure of infrastructure services.
 
 ---
 
-## 11. Secrets and Configuration
+# 11. Secrets and Configuration
 
 LocalRAG does not require cloud credentials for normal local operation.
 
@@ -422,7 +447,7 @@ The intended pattern is:
 
 for documented examples, while local secret-bearing configuration remains outside source control.
 
-### Never commit
+## Never commit
 
 - API keys
 - Cloud credentials
@@ -434,7 +459,7 @@ for documented examples, while local secret-bearing configuration remains outsid
 
 ---
 
-## 12. Dependency Security
+# 12. Dependency Security
 
 Application dependencies are pinned in the project dependency files.
 
@@ -450,7 +475,7 @@ Security updates should preserve:
 
 ---
 
-## 13. CI Security Gates
+# 13. CI Security Gates
 
 LocalRAG uses a staged GitHub Actions security pipeline.
 
@@ -476,11 +501,11 @@ LocalRAG uses a staged GitHub Actions security pipeline.
            Trivy      Trivy
 ```
 
-### Gitleaks
+## Gitleaks
 
 Scans the repository for exposed secrets and credentials.
 
-### CodeQL
+## CodeQL
 
 Performs static application security analysis for:
 
@@ -489,11 +514,11 @@ Python
 JavaScript / TypeScript
 ```
 
-### Trivy Config
+## Trivy Config
 
 Scans repository configuration and infrastructure definitions.
 
-### Trivy container scanning
+## Trivy container scanning
 
 The API and web images are built and scanned directly.
 
@@ -510,7 +535,7 @@ Fixed HIGH/CRITICAL findings are expected to be remediated rather than ignored.
 
 ---
 
-## 14. CI Path Filtering
+# 14. CI Path Filtering
 
 The CI pipeline uses changed-path detection.
 
@@ -529,7 +554,7 @@ Docker image builds are further restricted to changes that can affect the Docker
 
 ---
 
-## 15. Security Testing
+# 15. Security Testing
 
 Security-sensitive behavior is covered by automated tests.
 
@@ -548,13 +573,13 @@ Coverage includes:
 - Prompt-injection handling
 - RAG behavior
 
-### Complete API suite
+## Complete API suite
 
 ```powershell
 docker compose exec api pytest -q
 ```
 
-### Focused RAG / retrieval regression
+## Focused RAG / retrieval regression
 
 ```powershell
 docker compose exec api pytest -q tests/test_rag.py tests/test_retrieval.py
@@ -562,7 +587,7 @@ docker compose exec api pytest -q tests/test_rag.py tests/test_retrieval.py
 
 ---
 
-## 16. RAG Security Regression Baseline
+# 16. RAG Security Regression Baseline
 
 The current evaluation baseline is:
 
@@ -589,7 +614,7 @@ Security and retrieval changes should not silently degrade this baseline.
 
 ---
 
-## 17. Data Persistence
+# 17. Data Persistence
 
 LocalRAG persists:
 
@@ -606,7 +631,7 @@ Treat them as potentially sensitive because uploaded documents and model-related
 
 ---
 
-## 18. Logging and Sensitive Data
+# 18. Logging and Sensitive Data
 
 Application logs should not be treated as a safe place for secrets or document contents.
 
@@ -624,7 +649,7 @@ For troubleshooting, prefer service status and controlled diagnostic information
 
 ---
 
-## 19. Known Limitations
+# 19. Known Limitations
 
 LocalRAG has an intentionally limited security scope.
 
@@ -649,7 +674,7 @@ If these requirements become necessary, the deployment model and threat model mu
 
 ---
 
-## 20. Local Deployment Recommendations
+# 20. Local Deployment Recommendations
 
 For normal use:
 
@@ -664,7 +689,7 @@ For normal use:
 
 ---
 
-## 21. Vulnerability Reporting
+# 21. Vulnerability Reporting
 
 Please do **not** publicly disclose an undisclosed security vulnerability through a public issue.
 
@@ -683,7 +708,7 @@ Do not include credentials, secrets, or private personal information in a report
 
 ---
 
-## 22. Security Development Principles
+# 22. Security Development Principles
 
 | Principle | Practice |
 |---|---|
@@ -698,35 +723,35 @@ Do not include credentials, secrets, or private personal information in a report
 
 ---
 
-## Security Baseline
+# Security Baseline
 
 | Control | Status |
 |---|:---:|
-| Secure upload validation | ✅ |
-| File content validation | ✅ |
-| Parser resource limits | ✅ |
-| Temporary upload cleanup | ✅ |
-| Prompt-injection protection | ✅ |
-| Untrusted-document boundaries | ✅ |
-| Filename-aware retrieval | ✅ |
-| Grounded answer requirements | ✅ |
-| Citation controls | ✅ |
-| Non-root containers | ✅ |
-| Capability dropping | ✅ |
-| `no-new-privileges` | ✅ |
-| Restricted temporary filesystem | ✅ |
-| Internal backend network | ✅ |
-| Localhost-only application ports | ✅ |
-| Secret scanning | ✅ |
-| CodeQL SAST | ✅ |
-| Trivy configuration scanning | ✅ |
-| Trivy container scanning | ✅ |
-| Security regression tests | ✅ |
-| RAG evaluation baseline | ✅ |
+| Secure upload validation | Yes |
+| File content validation | Yes |
+| Parser resource limits | Yes |
+| Temporary upload cleanup | Yes |
+| Prompt-injection protection | Yes |
+| Untrusted-document boundaries | Yes |
+| Filename-aware retrieval | Yes |
+| Grounded answer requirements | Yes |
+| Citation controls | Yes |
+| Non-root containers | Yes |
+| Capability dropping | Yes |
+| `no-new-privileges` | Yes |
+| Restricted temporary filesystem | Yes |
+| Internal backend network | Yes |
+| Localhost-only application ports | Yes |
+| Secret scanning | Yes |
+| CodeQL SAST | Yes |
+| Trivy configuration scanning | Yes |
+| Trivy container scanning | Yes |
+| Security regression tests | Yes |
+| RAG evaluation baseline | Yes |
 
 ---
 
-## Security Disclaimer
+# Security Disclaimer
 
 LocalRAG is a personal/open-source engineering project designed primarily for trusted local use.
 
@@ -734,4 +759,4 @@ Security controls reduce risk, but they do not guarantee that the application is
 
 Before exposing LocalRAG to untrusted users, the public internet, sensitive multi-user workloads, or production environments, perform an independent security assessment appropriate to the deployment.
 
-**LocalRAG is intentionally portable, local, Docker-first, and security-conscious — without unnecessary infrastructure complexity.**
+> **LocalRAG is intentionally portable, local, Docker-first, and security-conscious — without unnecessary infrastructure complexity.**
