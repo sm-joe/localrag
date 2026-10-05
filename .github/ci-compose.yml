@@ -8,11 +8,11 @@ services:
   ollama:
     environment:
       OLLAMA_HOST: 0.0.0.0:11434
-    dns:
-      - 8.8.8.8
-      - 1.1.1.1
     volumes:
       - ollama-ci-data:/root/.ollama
+    networks:
+      - backend
+      - ci-egress
     healthcheck:
       test:
         - CMD
@@ -22,6 +22,10 @@ services:
       timeout: 5s
       retries: 20
       start_period: 10s
+
+networks:
+  ci-egress:
+    driver: bridge
 
 volumes:
   qdrant-ci-data:
