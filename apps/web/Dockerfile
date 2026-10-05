@@ -40,6 +40,9 @@ COPY --from=builder --chown=10001:10001 /app/.next/static ./.next/static
 
 USER 10001:10001
 
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+    CMD node -e "require('http').get('http://127.0.0.1:3000', r => process.exit(r.statusCode >= 200 && r.statusCode < 400 ? 0 : 1)).on('error', () => process.exit(1))"
+
 EXPOSE 3000
 
 CMD ["node", "server.js"]

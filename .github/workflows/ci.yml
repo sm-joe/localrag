@@ -79,7 +79,7 @@ jobs:
           scan-ref: .
           format: sarif
           output: trivy-config-results.sarif
-          exit-code: '0'
+          exit-code: '1'
           severity: 'CRITICAL,HIGH'
 
   changes:
