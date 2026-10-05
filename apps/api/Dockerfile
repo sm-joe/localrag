@@ -8,7 +8,10 @@ WORKDIR /app
 
 COPY requirements.txt .
 
-RUN pip install --no-cache-dir -r requirements.txt \
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends libpcre2-8-0=10.46-1~deb13u3 \
+    && rm -rf /var/lib/apt/lists/* \
+    && pip install --no-cache-dir -r requirements.txt \
     && groupadd --gid 10001 localrag \
     && useradd \
         --uid 10001 \

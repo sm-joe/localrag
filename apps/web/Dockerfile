@@ -19,6 +19,10 @@ RUN mkdir -p public && npm run build
 
 FROM node:22-alpine AS runner
 
+RUN npm install -g npm@latest && npm cache clean --force \
+    && rm -rf /usr/local/lib/node_modules/npm \
+    && rm -f /usr/local/bin/npm /usr/local/bin/npx
+
 WORKDIR /app
 
 ENV NODE_ENV=production
