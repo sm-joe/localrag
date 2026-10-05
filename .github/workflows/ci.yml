@@ -91,10 +91,11 @@ jobs:
             sleep 2
           done
 
-      - name: Pull Embedding Model
+      - name: Pull embedding model
         run: |
-          docker compose -f docker-compose.yml -f .github/ci-compose.yml exec -T ollama ollama pull nomic-embed-text
+          docker run --rm --network host ollama/ollama:latest pull nomic-embed-text
 
+      
       - name: Run API Tests Inside Compose Network
         run: |
           docker compose -f docker-compose.yml -f .github/ci-compose.yml run --rm api pytest -q
