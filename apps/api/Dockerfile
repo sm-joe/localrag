@@ -21,6 +21,8 @@ RUN pip install --no-cache-dir -r requirements.txt \
 COPY --chown=10001:10001 app ./app
 COPY --chown=10001:10001 tests ./tests
 
+RUN rm -rf /usr/local/lib/python3.14/site-packages/pip
+
 USER 10001:10001
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
