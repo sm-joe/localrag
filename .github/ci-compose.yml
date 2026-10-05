@@ -6,11 +6,22 @@ services:
       - qdrant-ci-data:/qdrant/storage
 
   ollama:
-    volumes:
-      - ollama-ci-data:/root/.ollama
+    environment:
+      OLLAMA_HOST: 0.0.0.0:11434
     dns:
       - 8.8.8.8
       - 1.1.1.1
+    volumes:
+      - ollama-ci-data:/root/.ollama
+    healthcheck:
+      test:
+        - CMD
+        - ollama
+        - list
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
 
 volumes:
   qdrant-ci-data:

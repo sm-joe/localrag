@@ -43,7 +43,7 @@ jobs:
 
       - name: Start Integration Services
         run: |
-          docker compose -f docker-compose.yml -f .github/ci-compose.yml up -d qdrant ollama
+          docker compose -f docker-compose.yml -f .github/ci-compose.yml up -d --wait qdrant ollama
 
       - name: Wait for Qdrant
         run: |
@@ -68,37 +68,14 @@ jobs:
             sleep 2
           done
 
-      - name: Wait for Ollama
-        run: |
-          for i in {1..60}; do
-            if docker compose \
-              -f docker-compose.yml \
-              -f .github/ci-compose.yml \
-              exec -T ollama \
-              ollama list >/dev/null 2>&1; then
-              echo "Ollama is ready"
-              break
-            fi
-
-            echo "Ollama not ready yet ($i/60)"
-
-            if [ "$i" -eq 60 ]; then
-              echo "Ollama failed to become ready"
-              docker logs localrag-ollama
-              exit 1
-            fi
-
-            sleep 2
-          done
-
       - name: Pull embedding model
         run: |
-          docker run --rm --network host ollama/ollama:latest pull nomic-embed-text
+          docker compose -f docker-compose.yml -f .github/ci-compose.yml exec -T ollama ollama pull nomic-embed-text
 
       
       - name: Run API Tests Inside Compose Network
         run: |
-          docker compose -f docker-compose.yml -f .github/ci-compose.yml run --rm api pytest -q
+          docker compose -f docker-compose.yml -f .github/ci-compose.yml run --rm --build api pytest -q
 
       - name: Show Service Logs On Failure
         if: failure()
