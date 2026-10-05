@@ -34,6 +34,63 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+  codeql:
+    name: Security - CodeQL
+    runs-on: ubuntu-latest
+
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        language:
+          - python
+          - javascript-typescript
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v4
+        with:
+          languages: ${{ matrix.language }}
+          queries: security-extended
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v4
+
+  changes:
+    name: Detect Changed Paths
+    runs-on: ubuntu-latest
+
+    outputs:
+      docker: ${{ steps.filter.outputs.docker }}
+
+    steps:
+
+      - name: Checkout Repository
+        uses: actions/checkout@v7
+
+      - name: Detect Changed Paths
+        id: filter
+        uses: dorny/paths-filter@v4
+        with:
+          filters: |
+            docker:
+              - 'apps/api/Dockerfile'
+              - 'apps/api/requirements.txt'
+              - 'apps/api/app/**'
+              - 'apps/web/Dockerfile'
+              - 'apps/web/package.json'
+              - 'apps/web/package-lock.json'
+              - 'apps/web/**'
+              - 'docker-compose.yml'
+              - '.github/ci-compose.yml'
+
   api-tests:
     name: API Tests
     runs-on: ubuntu-latest
@@ -132,8 +189,9 @@ jobs:
   docker-build:
     name: Docker Build
     runs-on: ubuntu-latest
-
+    if: needs.changes.outputs.docker == 'true'
     needs:
+      - changes
       - api-tests
       - web-build
 
