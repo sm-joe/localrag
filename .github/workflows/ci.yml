@@ -63,6 +63,25 @@ jobs:
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v4
 
+  trivy-config:
+    name: Security - Trivy Config
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v7
+
+      - name: Scan Repository Configuration
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          version: "v0.75.0"
+          scan-type: config
+          scan-ref: .
+          format: sarif
+          output: trivy-config-results.sarif
+          exit-code: '1'
+          severity: 'CRITICAL,HIGH'
+
   changes:
     name: Detect Changed Paths
     runs-on: ubuntu-latest
