@@ -51,23 +51,26 @@ jobs:
 
       - name: Wait for Qdrant
         run: |
-          for i in {1..60}; do
-            if curl --fail --silent http://127.0.0.1:6333/readyz > /dev/null 2>&1; then
-              echo "Qdrant is ready"
-              exit 0
-            fi
+          python - <<'PY'
+          import time
+          import urllib.request
 
-            echo "Waiting for Qdrant..."
-            sleep 2
-          done
+          url = "http://127.0.0.1:6333/collections"
 
-          echo "Qdrant failed to become ready"
-          docker compose \
-            -f docker-compose.yml \
-            -f .github/ci-compose.yml \
-            logs qdrant
+          for attempt in range(60):
+              try:
+                  with urllib.request.urlopen(url, timeout=5) as response:
+                      if response.status == 200:
+                          print("Qdrant is ready")
+                          raise SystemExit(0)
+              except Exception as exc:
+                  print(f"Qdrant not ready yet ({attempt + 1}/60): {exc}")
 
-          exit 1
+              time.sleep(2)
+
+          print("Qdrant failed to become ready")
+          raise SystemExit(1)
+          PY
 
       - name: Wait for Ollama
         run: |
