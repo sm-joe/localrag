@@ -51,25 +51,42 @@ jobs:
 
       - name: Wait for Qdrant
         run: |
+          for i in {1..60}; do
+            STATUS=$(docker inspect --format='{{if .State.Health}}{{.State.Health.Status}}{{else}}no-healthcheck{{end}}' localrag-qdrant 2>/dev/null || true)
+
+            echo "Qdrant container health: ${STATUS:-unknown}"
+
+            if [ "$STATUS" = "healthy" ]; then
+              echo "Qdrant is healthy"
+              break
+            fi
+
+            if [ "$i" -eq 60 ]; then
+              echo "Qdrant failed to become healthy"
+              docker inspect localrag-qdrant --format='{{json .State}}'
+              docker logs localrag-qdrant
+              exit 1
+            fi
+
+            sleep 2
+          done
+
+      - name: Verify Qdrant port
+        run: |
+          docker compose \
+            -f docker-compose.yml \
+            -f .github/ci-compose.yml \
+            port qdrant 6333
+
           python - <<'PY'
-          import time
-          import urllib.request
+          import socket
+          import sys
 
-          url = "http://127.0.0.1:6333/collections"
+          host = "127.0.0.1"
+          port = 6333
 
-          for attempt in range(60):
-              try:
-                  with urllib.request.urlopen(url, timeout=5) as response:
-                      if response.status == 200:
-                          print("Qdrant is ready")
-                          raise SystemExit(0)
-              except Exception as exc:
-                  print(f"Qdrant not ready yet ({attempt + 1}/60): {exc}")
-
-              time.sleep(2)
-
-          print("Qdrant failed to become ready")
-          raise SystemExit(1)
+          with socket.create_connection((host, port), timeout=10):
+              print(f"Qdrant TCP port {host}:{port} is reachable")
           PY
 
       - name: Wait for Ollama
