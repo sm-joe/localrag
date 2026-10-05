@@ -41,11 +41,89 @@ jobs:
           pip install -r requirements.txt
           pip install pytest-asyncio
 
+      - name: Start integration services
+        working-directory: .
+        run: |
+          docker compose \
+            -f docker-compose.yml \
+            -f .github/ci-compose.yml \
+            up -d qdrant ollama
+
+      - name: Wait for Qdrant
+        run: |
+          for i in {1..60}; do
+            if curl --fail --silent http://127.0.0.1:6333/readyz > /dev/null 2>&1; then
+              echo "Qdrant is ready"
+              exit 0
+            fi
+
+            echo "Waiting for Qdrant..."
+            sleep 2
+          done
+
+          echo "Qdrant failed to become ready"
+          docker compose \
+            -f docker-compose.yml \
+            -f .github/ci-compose.yml \
+            logs qdrant
+
+          exit 1
+
+      - name: Wait for Ollama
+        run: |
+          for i in {1..60}; do
+            if curl --fail --silent http://127.0.0.1:11434/api/tags > /dev/null 2>&1; then
+              echo "Ollama is ready"
+              exit 0
+            fi
+
+            echo "Waiting for Ollama..."
+            sleep 2
+          done
+
+          echo "Ollama failed to become ready"
+          docker compose \
+            -f docker-compose.yml \
+            -f .github/ci-compose.yml \
+            logs ollama
+
+          exit 1
+
+      - name: Pull embedding model
+        run: |
+          docker compose \
+            -f docker-compose.yml \
+            -f .github/ci-compose.yml \
+            exec -T ollama \
+            ollama pull nomic-embed-text
+
       - name: Run API tests
         working-directory: apps/api
         env:
           PYTHONPATH: ${{ github.workspace }}/apps/api
-        run: pytest -q
+          QDRANT_HOST: 127.0.0.1
+          QDRANT_PORT: "6333"
+          OLLAMA_BASE_URL: http://127.0.0.1:11434
+          EMBEDDING_MODEL: nomic-embed-text
+          LLM_MODEL: llama3.2:3b
+        run: |
+          pytest -q
+
+      - name: Show integration service logs on failure
+        if: failure()
+        run: |
+          docker compose \
+            -f docker-compose.yml \
+            -f .github/ci-compose.yml \
+            logs qdrant ollama
+
+      - name: Stop integration services
+        if: always()
+        run: |
+          docker compose \
+            -f docker-compose.yml \
+            -f .github/ci-compose.yml \
+            down -v
 
   web-build:
     name: Web Build
@@ -77,6 +155,7 @@ jobs:
   docker-build:
     name: Docker Build
     runs-on: ubuntu-latest
+
     needs:
       - api-tests
       - web-build
