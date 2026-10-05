@@ -1,0 +1,159 @@
+{
+  "name": "LocalRAG Baseline Evaluation",
+  "version": "2.0",
+  "description": "Baseline evaluation dataset for LocalRAG retrieval, answer coverage, citations, and grounding.",
+  "cases": [
+    {
+      "id": "rag-001",
+      "question": "What does LocalRAG use for vector storage?",
+      "expected_answer": "LocalRAG uses Qdrant for vector storage.",
+      "expected_concepts": [
+        {
+          "name": "Qdrant",
+          "variants": [
+            "Qdrant"
+          ]
+        },
+        {
+          "name": "vector storage",
+          "variants": [
+            "vector storage",
+            "vector database"
+          ]
+        }
+      ],
+      "expected_filename": "rag-filename-test.txt"
+    },
+    {
+      "id": "rag-002",
+      "question": "What does RAG combine?",
+      "expected_answer": "RAG combines document retrieval with a large language model.",
+      "expected_concepts": [
+        {
+          "name": "document retrieval",
+          "variants": [
+            "document retrieval",
+            "retrieval"
+          ]
+        },
+        {
+          "name": "large language model",
+          "variants": [
+            "large language model",
+            "language model",
+            "LLM"
+          ]
+        }
+      ],
+      "expected_filename": "rag-filename-test.txt"
+    },
+    {
+      "id": "rag-003",
+      "question": "How are documents processed before being stored in the vector database?",
+      "expected_answer": "Documents are parsed, split into chunks, converted into embeddings, and stored in a vector database.",
+      "expected_concepts": [
+        {
+          "name": "document parsing",
+          "variants": [
+            "parsed",
+            "parsing",
+            "being parsed"
+          ]
+        },
+        {
+          "name": "chunking",
+          "variants": [
+            "split into chunks",
+            "splitting into chunks",
+            "chunks",
+            "chunking"
+          ]
+        },
+        {
+          "name": "embeddings",
+          "variants": [
+            "embeddings",
+            "embedding"
+          ]
+        },
+        {
+          "name": "vector database",
+          "variants": [
+            "vector database",
+            "vector storage"
+          ]
+        }
+      ],
+      "expected_filename": "rag-filename-test.txt"
+    },
+    {
+      "id": "rag-004",
+      "question": "What happens when a user asks a question?",
+      "expected_answer": "The question is converted into an embedding and the vector database is searched for semantically relevant document chunks.",
+      "expected_concepts": [
+        {
+          "name": "question embedding",
+          "variants": [
+            "question is converted into an embedding",
+            "question into an embedding",
+            "converts the question into an embedding",
+            "question embedding",
+            "embedding"
+          ]
+        },
+        {
+          "name": "vector database search",
+          "variants": [
+            "searches the vector database",
+            "vector database is searched",
+            "search the vector database",
+            "vector database search"
+          ]
+        },
+        {
+          "name": "relevant document chunks",
+          "variants": [
+            "semantically relevant document chunks",
+            "relevant document chunks",
+            "relevant chunks",
+            "document chunks"
+          ]
+        }
+      ],
+      "expected_filename": "rag-filename-test.txt"
+    },
+    {
+      "id": "rag-005",
+      "question": "What technologies does LocalRAG use?",
+      "expected_answer": "LocalRAG uses FastAPI for the backend, Next.js for the user interface, Ollama for local models, and Qdrant for vector storage.",
+      "expected_concepts": [
+        {
+          "name": "FastAPI",
+          "variants": [
+            "FastAPI"
+          ]
+        },
+        {
+          "name": "Next.js",
+          "variants": [
+            "Next.js",
+            "NextJS"
+          ]
+        },
+        {
+          "name": "Ollama",
+          "variants": [
+            "Ollama"
+          ]
+        },
+        {
+          "name": "Qdrant",
+          "variants": [
+            "Qdrant"
+          ]
+        }
+      ],
+      "expected_filename": "rag-filename-test.txt"
+    }
+  ]
+}

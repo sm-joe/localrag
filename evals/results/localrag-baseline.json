@@ -1,0 +1,389 @@
+{
+  "dataset": "LocalRAG Baseline Evaluation",
+  "dataset_version": "2.0",
+  "timestamp": "2026-10-05T08:42:37.152164+00:00",
+  "summary": {
+    "total_cases": 5,
+    "passed_cases": 5,
+    "failed_cases": 0,
+    "pass_rate": 1.0,
+    "expected_document_recall": 1.0,
+    "context_retrieval_rate": 1.0,
+    "concept_answer_pass_rate": 1.0,
+    "citation_coverage": 1.0,
+    "grounded_answer_rate": 1.0,
+    "average_concept_score": 1.0
+  },
+  "results": [
+    {
+      "id": "rag-001",
+      "question": "What does LocalRAG use for vector storage?",
+      "expected_answer": "LocalRAG uses Qdrant for vector storage.",
+      "actual_answer": "According to the document context, LocalRAG uses Qdrant for vector storage [1].",
+      "retrieval": {
+        "expected_document_retrieved": true,
+        "expected_document_rank": 1,
+        "candidate_count": 1,
+        "returned_count": 1,
+        "filtered_count": 0,
+        "top_candidate_score": 0.7739523,
+        "top_returned_score": 0.7739523,
+        "has_context": true,
+        "source_count": 1
+      },
+      "source_evaluation": {
+        "expected_filename": "rag-filename-test.txt",
+        "matching_sources": 1,
+        "expected_source_ranks": [
+          1
+        ],
+        "rank": 1,
+        "passed": true
+      },
+      "concept_evaluation": {
+        "matched": [
+          "Qdrant",
+          "vector storage"
+        ],
+        "missing": [],
+        "score": 1.0,
+        "passed": true,
+        "details": [
+          {
+            "name": "Qdrant",
+            "matched": true,
+            "matched_variant": "Qdrant"
+          },
+          {
+            "name": "vector storage",
+            "matched": true,
+            "matched_variant": "vector storage"
+          }
+        ]
+      },
+      "citation_evaluation": {
+        "citations": [
+          1
+        ],
+        "valid_citations": [
+          1
+        ],
+        "invalid_citations": [],
+        "source_count": 1,
+        "passed": true
+      },
+      "grounding_passed": true,
+      "answer_passed": true,
+      "passed": true,
+      "performance": {
+        "embedding_ms": 114.69,
+        "retrieval_ms": 125.11,
+        "prompt_build_ms": 0.02,
+        "llm_ms": 2784.61,
+        "total_ms": 2909.8
+      }
+    },
+    {
+      "id": "rag-002",
+      "question": "What does RAG combine?",
+      "expected_answer": "RAG combines document retrieval with a large language model.",
+      "actual_answer": "RAG combines document retrieval with a large language model, commonly referred to as RAG, combines document retrieval with a large language model [1].",
+      "retrieval": {
+        "expected_document_retrieved": true,
+        "expected_document_rank": 1,
+        "candidate_count": 1,
+        "returned_count": 1,
+        "filtered_count": 0,
+        "top_candidate_score": 0.5200151,
+        "top_returned_score": 0.5200151,
+        "has_context": true,
+        "source_count": 1
+      },
+      "source_evaluation": {
+        "expected_filename": "rag-filename-test.txt",
+        "matching_sources": 1,
+        "expected_source_ranks": [
+          1
+        ],
+        "rank": 1,
+        "passed": true
+      },
+      "concept_evaluation": {
+        "matched": [
+          "document retrieval",
+          "large language model"
+        ],
+        "missing": [],
+        "score": 1.0,
+        "passed": true,
+        "details": [
+          {
+            "name": "document retrieval",
+            "matched": true,
+            "matched_variant": "document retrieval"
+          },
+          {
+            "name": "large language model",
+            "matched": true,
+            "matched_variant": "large language model"
+          }
+        ]
+      },
+      "citation_evaluation": {
+        "citations": [
+          1
+        ],
+        "valid_citations": [
+          1
+        ],
+        "invalid_citations": [],
+        "source_count": 1,
+        "passed": true
+      },
+      "grounding_passed": true,
+      "answer_passed": true,
+      "passed": true,
+      "performance": {
+        "embedding_ms": 103.46,
+        "retrieval_ms": 109.41,
+        "prompt_build_ms": 0.01,
+        "llm_ms": 2914.3,
+        "total_ms": 3023.76
+      }
+    },
+    {
+      "id": "rag-003",
+      "question": "How are documents processed before being stored in the vector database?",
+      "expected_answer": "Documents are parsed, split into chunks, converted into embeddings, and stored in a vector database.",
+      "actual_answer": "According to the provided document context, documents are parsed, split into chunks, converted into embeddings, and stored in a vector database [1].",
+      "retrieval": {
+        "expected_document_retrieved": true,
+        "expected_document_rank": 1,
+        "candidate_count": 1,
+        "returned_count": 1,
+        "filtered_count": 0,
+        "top_candidate_score": 0.5313907,
+        "top_returned_score": 0.5313907,
+        "has_context": true,
+        "source_count": 1
+      },
+      "source_evaluation": {
+        "expected_filename": "rag-filename-test.txt",
+        "matching_sources": 1,
+        "expected_source_ranks": [
+          1
+        ],
+        "rank": 1,
+        "passed": true
+      },
+      "concept_evaluation": {
+        "matched": [
+          "document parsing",
+          "chunking",
+          "embeddings",
+          "vector database"
+        ],
+        "missing": [],
+        "score": 1.0,
+        "passed": true,
+        "details": [
+          {
+            "name": "document parsing",
+            "matched": true,
+            "matched_variant": "parsed"
+          },
+          {
+            "name": "chunking",
+            "matched": true,
+            "matched_variant": "split into chunks"
+          },
+          {
+            "name": "embeddings",
+            "matched": true,
+            "matched_variant": "embeddings"
+          },
+          {
+            "name": "vector database",
+            "matched": true,
+            "matched_variant": "vector database"
+          }
+        ]
+      },
+      "citation_evaluation": {
+        "citations": [
+          1
+        ],
+        "valid_citations": [
+          1
+        ],
+        "invalid_citations": [],
+        "source_count": 1,
+        "passed": true
+      },
+      "grounding_passed": true,
+      "answer_passed": true,
+      "passed": true,
+      "performance": {
+        "embedding_ms": 98.09,
+        "retrieval_ms": 102.93,
+        "prompt_build_ms": 0.01,
+        "llm_ms": 3124.29,
+        "total_ms": 3227.27
+      }
+    },
+    {
+      "id": "rag-004",
+      "question": "What happens when a user asks a question?",
+      "expected_answer": "The question is converted into an embedding and the vector database is searched for semantically relevant document chunks.",
+      "actual_answer": "When a user asks a question, the application converts the question into an embedding and searches the vector database for semantically relevant document chunks [1]. The retrieved chunks are then provided to the language model as context so that the model can generate an answer grounded in the user's documents.",
+      "retrieval": {
+        "expected_document_retrieved": true,
+        "expected_document_rank": 1,
+        "candidate_count": 1,
+        "returned_count": 1,
+        "filtered_count": 0,
+        "top_candidate_score": 0.475959,
+        "top_returned_score": 0.475959,
+        "has_context": true,
+        "source_count": 1
+      },
+      "source_evaluation": {
+        "expected_filename": "rag-filename-test.txt",
+        "matching_sources": 1,
+        "expected_source_ranks": [
+          1
+        ],
+        "rank": 1,
+        "passed": true
+      },
+      "concept_evaluation": {
+        "matched": [
+          "question embedding",
+          "vector database search",
+          "relevant document chunks"
+        ],
+        "missing": [],
+        "score": 1.0,
+        "passed": true,
+        "details": [
+          {
+            "name": "question embedding",
+            "matched": true,
+            "matched_variant": "question into an embedding"
+          },
+          {
+            "name": "vector database search",
+            "matched": true,
+            "matched_variant": "searches the vector database"
+          },
+          {
+            "name": "relevant document chunks",
+            "matched": true,
+            "matched_variant": "semantically relevant document chunks"
+          }
+        ]
+      },
+      "citation_evaluation": {
+        "citations": [
+          1
+        ],
+        "valid_citations": [
+          1
+        ],
+        "invalid_citations": [],
+        "source_count": 1,
+        "passed": true
+      },
+      "grounding_passed": true,
+      "answer_passed": true,
+      "passed": true,
+      "performance": {
+        "embedding_ms": 112.44,
+        "retrieval_ms": 122.9,
+        "prompt_build_ms": 0.01,
+        "llm_ms": 5223.7,
+        "total_ms": 5346.64
+      }
+    },
+    {
+      "id": "rag-005",
+      "question": "What technologies does LocalRAG use?",
+      "expected_answer": "LocalRAG uses FastAPI for the backend, Next.js for the user interface, Ollama for local models, and Qdrant for vector storage.",
+      "actual_answer": "LocalRAG uses the following technologies:\n\n- FastAPI for the backend [1]\n- Next.js for the user interface [1]\n- Ollama for local models [1]\n- Qdrant for vector storage [1]",
+      "retrieval": {
+        "expected_document_retrieved": true,
+        "expected_document_rank": 1,
+        "candidate_count": 1,
+        "returned_count": 1,
+        "filtered_count": 0,
+        "top_candidate_score": 0.74738157,
+        "top_returned_score": 0.74738157,
+        "has_context": true,
+        "source_count": 1
+      },
+      "source_evaluation": {
+        "expected_filename": "rag-filename-test.txt",
+        "matching_sources": 1,
+        "expected_source_ranks": [
+          1
+        ],
+        "rank": 1,
+        "passed": true
+      },
+      "concept_evaluation": {
+        "matched": [
+          "FastAPI",
+          "Next.js",
+          "Ollama",
+          "Qdrant"
+        ],
+        "missing": [],
+        "score": 1.0,
+        "passed": true,
+        "details": [
+          {
+            "name": "FastAPI",
+            "matched": true,
+            "matched_variant": "FastAPI"
+          },
+          {
+            "name": "Next.js",
+            "matched": true,
+            "matched_variant": "Next.js"
+          },
+          {
+            "name": "Ollama",
+            "matched": true,
+            "matched_variant": "Ollama"
+          },
+          {
+            "name": "Qdrant",
+            "matched": true,
+            "matched_variant": "Qdrant"
+          }
+        ]
+      },
+      "citation_evaluation": {
+        "citations": [
+          1
+        ],
+        "valid_citations": [
+          1
+        ],
+        "invalid_citations": [],
+        "source_count": 1,
+        "passed": true
+      },
+      "grounding_passed": true,
+      "answer_passed": true,
+      "passed": true,
+      "performance": {
+        "embedding_ms": 93.86,
+        "retrieval_ms": 102.54,
+        "prompt_build_ms": 0.01,
+        "llm_ms": 4373.98,
+        "total_ms": 4476.57
+      }
+    }
+  ]
+}
