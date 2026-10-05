@@ -120,7 +120,9 @@ export default function Home() {
     }
   }
 
-  useEffect(() => {
+    useEffect(() => {
+      // Loading documents on mount intentionally updates component state.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
     void loadDocuments();
   }, []);
 
