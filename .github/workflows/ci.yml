@@ -192,6 +192,8 @@ jobs:
     if: needs.changes.outputs.docker == 'true'
     needs:
       - changes
+      - gitleaks
+      - codeql
       - api-tests
       - web-build
 
@@ -219,7 +221,7 @@ jobs:
           image-ref: localrag-api:ci
           format: sarif
           output: trivy-api-results.sarif
-          exit-code: '0'
+          exit-code: '1'
           ignore-unfixed: true
           severity: 'CRITICAL,HIGH'
 
@@ -247,7 +249,7 @@ jobs:
           image-ref: localrag-web:ci
           format: sarif
           output: trivy-web-results.sarif
-          exit-code: '0'
+          exit-code: '1'
           ignore-unfixed: true
           severity: 'CRITICAL,HIGH'
 
