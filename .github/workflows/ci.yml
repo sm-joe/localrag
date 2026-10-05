@@ -212,6 +212,24 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: Scan API Image
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          version: "v0.75.0"
+          image-ref: localrag-api:ci
+          format: sarif
+          output: trivy-api-results.sarif
+          exit-code: '0'
+          ignore-unfixed: true
+          severity: 'CRITICAL,HIGH'
+
+      - name: Upload API Trivy Results to Code Scanning
+        if: github.event_name == 'push'
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: trivy-api-results.sarif
+          category: trivy-container-api
+
       - name: Build Web Image
         uses: docker/build-push-action@v7
         with:
@@ -221,3 +239,21 @@ jobs:
           tags: localrag-web:ci
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Scan Web Image
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          version: "v0.75.0"
+          image-ref: localrag-web:ci
+          format: sarif
+          output: trivy-web-results.sarif
+          exit-code: '0'
+          ignore-unfixed: true
+          severity: 'CRITICAL,HIGH'
+
+      - name: Upload Web Trivy Results to Code Scanning
+        if: github.event_name == 'push'
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: trivy-web-results.sarif
+          category: trivy-container-web
