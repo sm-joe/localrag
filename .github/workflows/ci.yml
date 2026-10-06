@@ -139,10 +139,6 @@ jobs:
         run: |
           $COMPOSE up -d --wait qdrant ollama
 
-      - name: Pull embedding model
-        run: |
-          $COMPOSE exec -T ollama ollama pull nomic-embed-text
-
       - name: Run API Tests
         run: |
           $COMPOSE run --rm --build api pytest -q
@@ -150,7 +146,7 @@ jobs:
       - name: Show Service Logs On Failure
         if: failure()
         run: |
-          $COMPOSE logs --no-color qdrant ollama api
+          $COMPOSE logs --no-color qdrant ollama-init ollama api
           
       - name: Stop Integration Services
         if: always()

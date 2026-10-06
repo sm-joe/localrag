@@ -26,7 +26,7 @@ services:
       qdrant:
         condition: service_healthy
       ollama:
-        condition: service_started
+        condition: service_healthy
 
   web:
     build:
@@ -55,7 +55,7 @@ services:
     cap_drop:
       - ALL
     volumes:
-      - ./data/qdrant:/qdrant/storage
+      - qdrant_data:/qdrant/storage
     networks:
       - backend
     healthcheck:
@@ -100,9 +100,9 @@ services:
         ollama pull nomic-embed-text
         ollama pull llama3.2:3b
 
-ollama:
-  build:
-    context: ./ollama
+  ollama:
+    build:
+      context: ./ollama
     container_name: localrag-ollama
     restart: unless-stopped
     environment:
