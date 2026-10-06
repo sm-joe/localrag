@@ -5,14 +5,17 @@ services:
     volumes:
       - qdrant-ci-data:/qdrant/storage
 
+ollama-init:
+  networks:
+    - ollama-egress
+
   ollama:
     environment:
       OLLAMA_HOST: 0.0.0.0:11434
     volumes:
-      - ollama-ci-data:/root/.ollama
+      - ollama-ci-data:/opt/ollama-models
     networks:
       - backend
-      - ci-egress
     healthcheck:
       test:
         - CMD
@@ -24,7 +27,7 @@ services:
       start_period: 10s
 
 networks:
-  ci-egress:
+  ollama-egress:
     driver: bridge
 
 volumes:

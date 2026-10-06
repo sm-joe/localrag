@@ -67,21 +67,68 @@ services:
       retries: 5
       start_period: 10s
 
-  ollama:
-    build:
-      context: ./ollama
+  ollama-init:
+    image: ollama/ollama:0.35.1
+    container_name: localrag-ollama-init
+    restart: "no"
+    environment:
+      OLLAMA_HOST: 0.0.0.0:11434
+      OLLAMA_MODELS: /opt/ollama-models
+    volumes:
+      - ollama_models:/opt/ollama-models
+    networks:
+      - ollama-egress
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        set -eu
+
+        ollama serve >/tmp/ollama-init.log 2>&1 &
+        OLLAMA_PID=$!
+
+        trap 'kill "$${OLLAMA_PID}" 2>/dev/null || true' EXIT
+
+        until ollama list >/dev/null 2>&1; do
+          if ! kill -0 "$${OLLAMA_PID}" 2>/dev/null; then
+            cat /tmp/ollama-init.log
+            exit 1
+          fi
+          sleep 2
+        done
+
+        ollama pull nomic-embed-text
+        ollama pull llama3.2:3b
+
+ollama:
+  build:
+    context: ./ollama
     container_name: localrag-ollama
     restart: unless-stopped
     environment:
       OLLAMA_HOST: 0.0.0.0:11434
       OLLAMA_MODELS: /opt/ollama-models
       OLLAMA_ORIGINS: "*"
+    volumes:
+      - ollama_models:/opt/ollama-models
     networks:
       - backend
     security_opt:
       - no-new-privileges:true
     cap_drop:
       - ALL
+    depends_on:
+      ollama-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        - CMD
+        - ollama
+        - list
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
 
 networks:
   frontend:
@@ -91,5 +138,9 @@ networks:
     driver: bridge
     internal: true
 
+  ollama-egress:
+    driver: bridge
+
 volumes:
   qdrant_data:
+  ollama_models:
