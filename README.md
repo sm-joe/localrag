@@ -273,7 +273,7 @@ More memory and CPU generally improve local LLM performance.
 ## 1. Clone
 
 ```powershell
-git clone <your-repository-url>
+git clone https://github.com/sm-joe/localrag.git
 cd localrag
 ```
 
