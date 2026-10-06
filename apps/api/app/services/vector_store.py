@@ -102,6 +102,16 @@ class VectorStore:
                 "Document hash cannot be empty."
             )
 
+        collections = self.client.get_collections()
+
+        collection_exists = any(
+            collection.name == self.collection_name
+            for collection in collections.collections
+        )
+
+        if not collection_exists:
+            return None
+
         records, _ = self.client.scroll(
             collection_name=self.collection_name,
             scroll_filter=models.Filter(
