@@ -6,24 +6,6 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/sm-joe/localrag">
-    <img src="https://img.shields.io/github/stars/sm-joe/localrag?style=for-the-badge&logo=github&logoColor=white" alt="GitHub Stars">
-  </a>
-  <a href="https://github.com/sm-joe/localrag/network/members">
-    <img src="https://img.shields.io/github/forks/sm-joe/localrag?style=for-the-badge&logo=github&logoColor=white" alt="GitHub Forks">
-  </a>
-  <a href="https://github.com/sm-joe/localrag/issues">
-    <img src="https://img.shields.io/github/issues/sm-joe/localrag?style=for-the-badge&logo=github&logoColor=white" alt="GitHub Issues">
-  </a>
-  <a href="https://github.com/sm-joe/localrag/blob/main/LICENSE">
-    <img src="https://img.shields.io/github/license/sm-joe/localrag?style=for-the-badge&logo=opensourceinitiative&logoColor=white" alt="License">
-  </a>
-  <a href="https://github.com/sm-joe/localrag/actions">
-    <img src="https://img.shields.io/github/actions/workflow/status/sm-joe/localrag/ci.yml?branch=main&style=for-the-badge&logo=githubactions&logoColor=white&label=CI" alt="CI">
-  </a>
-</p>
-
-<p align="center">
   <img src="https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=next.js&logoColor=white" alt="Next.js">
   <img src="https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" alt="React">
   <img src="https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI">
