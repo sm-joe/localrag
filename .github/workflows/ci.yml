@@ -38,12 +38,7 @@ jobs:
         with:
           filters: |
             docker:
-              - 'apps/api/Dockerfile'
-              - 'apps/api/requirements.txt'
-              - 'apps/api/app/**'
-              - 'apps/web/Dockerfile'
-              - 'apps/web/package.json'
-              - 'apps/web/package-lock.json'
+              - 'apps/api/**'
               - 'apps/web/**'
               - 'ollama/**'
               - 'docker-compose.yml'
@@ -63,8 +58,7 @@ jobs:
     name: Security - Gitleaks
     if: needs.changes.outputs.ci == 'true'
     runs-on: ubuntu-latest
-    needs:
-      - changes
+    needs: changes
 
     steps:
       - name: Checkout Repository
@@ -81,8 +75,7 @@ jobs:
     name: Security - CodeQL
     if: needs.changes.outputs.ci == 'true'
     runs-on: ubuntu-latest
-    needs:
-      - changes
+    needs: changes
 
     permissions:
       security-events: write
@@ -113,8 +106,7 @@ jobs:
     name: Security - Trivy Config
     if: needs.changes.outputs.ci == 'true'
     runs-on: ubuntu-latest
-    needs: 
-      - changes
+    needs: changes
 
     steps:
       - name: Checkout Repository
@@ -126,8 +118,7 @@ jobs:
           version: "v0.75.0"
           scan-type: config
           scan-ref: .
-          format: sarif
-          output: trivy-config-results.sarif
+          format: table
           exit-code: '1'
           severity: 'CRITICAL,HIGH'
 
@@ -135,79 +126,46 @@ jobs:
     name: API Tests
     if: needs.changes.outputs.ci == 'true'
     runs-on: ubuntu-latest
-    needs:
-      - changes
+    needs: changes
+
+    env:
+      COMPOSE: docker compose -f docker-compose.yml -f .github/ci-compose.yml
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v7
 
-      - name: Set up Python
-        uses: actions/setup-python@v7
-        with:
-          python-version: "3.14"
-          cache: pip
-          cache-dependency-path: apps/api/requirements.txt
-
-      - name: Install API Dependencies
-        working-directory: apps/api
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install pytest-asyncio
-
       - name: Start Integration Services
         run: |
-          docker compose -f docker-compose.yml -f .github/ci-compose.yml up -d --wait qdrant ollama
-
-      - name: Wait for Qdrant
-        run: |
-          for i in {1..60}; do
-            STATUS=$(docker inspect \
-              --format='{{if .State.Health}}{{.State.Health.Status}}{{else}}no-healthcheck{{end}}' \
-              localrag-qdrant 2>/dev/null || true)
-
-            echo "Qdrant health: ${STATUS:-unknown}"
-
-            if [ "$STATUS" = "healthy" ]; then
-              echo "Qdrant is healthy"
-              break
-            fi
-
-            if [ "$i" -eq 60 ]; then
-              echo "Qdrant failed to become healthy"
-              docker logs localrag-qdrant
-              exit 1
-            fi
-
-            sleep 2
-          done
+          $COMPOSE up -d --wait qdrant ollama
 
       - name: Pull embedding model
         run: |
-          docker compose -f docker-compose.yml -f .github/ci-compose.yml exec -T ollama ollama pull nomic-embed-text
+          $COMPOSE exec -T ollama ollama pull nomic-embed-text
 
-      
-      - name: Run API Tests Inside Compose Network
+      - name: Run API Tests
         run: |
-          docker compose -f docker-compose.yml -f .github/ci-compose.yml run --rm --build api pytest -q
+          $COMPOSE run --rm --build api pytest -q
 
       - name: Show Service Logs On Failure
         if: failure()
         run: |
-          docker compose -f docker-compose.yml -f .github/ci-compose.yml logs --no-color qdrant ollama api
+          $COMPOSE logs --no-color qdrant ollama api
           
       - name: Stop Integration Services
         if: always()
         run: |
-          docker compose -f docker-compose.yml -f .github/ci-compose.yml down -v
+          $COMPOSE down -v
 
   web-build:
     name: Web Build
     if: needs.changes.outputs.ci == 'true'
     runs-on: ubuntu-latest
-    needs:
-      - changes
+    needs: changes
+
+    defaults:
+      run:
+        working-directory: apps/web
 
     steps:
       - name: Checkout Repository
@@ -221,33 +179,39 @@ jobs:
           cache-dependency-path: apps/web/package-lock.json
 
       - name: Install Web Dependencies
-        working-directory: apps/web
         run: npm ci
 
       - name: Run Web Lint
-        working-directory: apps/web
         run: npm run lint
 
       - name: Build Web Application
-        working-directory: apps/web
         run: npm run build
 
   docker-build:
     name: Docker Build
     if: |
-      always() &&
       needs.changes.outputs.docker == 'true' &&
-      (needs.gitleaks.result == 'success' || needs.gitleaks.result == 'skipped') &&
-      (needs.codeql.result == 'success' || needs.codeql.result == 'skipped') &&
-      (needs.trivy-config.result == 'success' || needs.trivy-config.result == 'skipped') &&
-      (needs.api-tests.result == 'success' || needs.api-tests.result == 'skipped') &&
-      (needs.web-build.result == 'success' || needs.web-build.result == 'skipped')
-    
+      (
+        needs.gitleaks.result == 'success' ||
+        needs.gitleaks.result == 'skipped'
+      ) &&
+      (
+        needs.codeql.result == 'success' ||
+        needs.codeql.result == 'skipped'
+      ) &&
+      (
+        needs.trivy-config.result == 'success' ||
+        needs.trivy-config.result == 'skipped'
+      ) &&
+      (
+        needs.api-tests.result == 'success' ||
+        needs.api-tests.result == 'skipped'
+      ) &&
+      (
+        needs.web-build.result == 'success' ||
+        needs.web-build.result == 'skipped'
+      )
     runs-on: ubuntu-latest
-
-    permissions:
-      contents: read
-      security-events: write
 
     needs:
       - changes
@@ -256,6 +220,10 @@ jobs:
       - trivy-config
       - api-tests
       - web-build
+    
+    permissions:
+      contents: read
+      security-events: write
 
     steps:
       - name: Checkout Repository
@@ -271,8 +239,8 @@ jobs:
           file: ./apps/api/Dockerfile
           load: true
           tags: localrag-api:ci
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=localrag-api
+          cache-to: type=gha,scope=localrag-api,mode=max
 
       - name: Scan API Image
         uses: aquasecurity/trivy-action@v0.36.0
@@ -285,7 +253,7 @@ jobs:
           ignore-unfixed: true
           severity: 'CRITICAL,HIGH'
 
-      - name: Upload API Trivy Results to Code Scanning
+      - name: Upload API Trivy Results
         if: always() && github.event_name == 'push'
         uses: github/codeql-action/upload-sarif@v4
         with:
@@ -299,8 +267,8 @@ jobs:
           file: ./apps/web/Dockerfile
           load: true
           tags: localrag-web:ci
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=localrag-web
+          cache-to: type=gha,scope=localrag-web,mode=max
 
       - name: Scan Web Image
         uses: aquasecurity/trivy-action@v0.36.0
@@ -313,7 +281,7 @@ jobs:
           ignore-unfixed: true
           severity: 'CRITICAL,HIGH'
 
-      - name: Upload Web Trivy Results to Code Scanning
+      - name: Upload Web Trivy Results
         if: always() && github.event_name == 'push'
         uses: github/codeql-action/upload-sarif@v4
         with:
