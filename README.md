@@ -119,6 +119,8 @@ The model is instructed to:
 
 You do not need Python, Node.js, or Ollama installed directly on the host for the normal Docker workflow.
 
+Ollama model provisioning is separated from the runtime container. Models are downloaded by a one-shot `ollama-init` service into a shared Docker volume, while the runtime Ollama container remains isolated from the Internet.
+
 ---
 
 ## Architecture
@@ -201,7 +203,7 @@ Grounded answer + citations
 
 ## Docker network model
 
-LocalRAG intentionally separates externally reachable application services from internal infrastructure.
+LocalRAG intentionally separates externally reachable application services, internal infrastructure, and temporary model provisioning.
 
 ```text
 Host
@@ -213,14 +215,40 @@ Host
                            ├──► Qdrant
                            │
                            └──► Ollama
+                                  │
+                           shared model volume
+                                  │
+                                  ▲
+                           ollama-init
+                                  │
+                           temporary egress
+                                  │
+                                  ▼
+                              Internet
+```
 
-Qdrant and Ollama
-       ▲
-       │
-   internal backend network
+Production networks:
+
+```text
+frontend
+   │
+   ├── Web
+   └── API
+
+backend (internal: true)
+   │
+   ├── API
+   ├── Qdrant
+   └── Ollama
+
+ollama-egress
+   │
+   └── ollama-init
 ```
 
 Qdrant and Ollama are not published directly to the host in the production Compose configuration.
+
+The runtime Ollama container does not require Internet access. Only `ollama-init` receives external network access for model provisioning.
 
 ---
 
@@ -265,7 +293,7 @@ cd localrag
 docker compose build
 ```
 
-The build also provisions the required Ollama models into the Ollama image. No manual model download is required.
+The build creates the application and Ollama images without downloading model artifacts. Model provisioning happens during first startup through the `ollama-init` service. No manual model download is required.
 
 ## 3. Start
 
@@ -313,11 +341,20 @@ LLM_MODEL=llama3.2:3b
 EMBEDDING_MODEL=nomic-embed-text
 ```
 
-The required Ollama models are **provisioned into the LocalRAG Ollama image during `docker compose build`**.
+The required Ollama models are **provisioned during first startup by the `ollama-init` service**.
 
 You do **not** need to install Ollama on the host or manually run `ollama pull`.
 
-After the image has been built, verify the available models with:
+The provisioning service downloads:
+
+```text
+llama3.2:3b
+nomic-embed-text
+```
+
+into a persistent Docker volume shared with the runtime Ollama container.
+
+Verify the available models with:
 
 ```powershell
 docker compose exec ollama ollama list
@@ -325,7 +362,7 @@ docker compose exec ollama ollama list
 
 The runtime Ollama container does not need Internet access to obtain the required models.
 
-> The initial `docker compose build` requires network access because the required model artifacts are downloaded while the Ollama image is built. Subsequent container starts use the models already packaged in the image.
+> `docker compose build` does not download the Ollama models. On first startup, `ollama-init` requires Internet access to download them. Subsequent starts reuse the existing model volume.
 
 ---
 
@@ -669,7 +706,7 @@ data/
 └── qdrant/
 ```
 
-The required Ollama models are packaged into the Ollama container image rather than stored in the application data directory.
+The required Ollama models are stored in the Docker-managed `ollama_models` volume rather than packaged into the Ollama container image or stored in the application data directory.
 
 Treat the Qdrant and document directories as application state.
 
@@ -897,7 +934,7 @@ The browser should access the API through the locally published API endpoint rat
 <details>
 <summary><strong>Ollama has no models</strong></summary>
 
-The required models are provisioned when the Ollama image is built.
+The required models are provisioned by the `ollama-init` service.
 
 Check the models:
 
@@ -905,24 +942,29 @@ Check the models:
 docker compose exec ollama ollama list
 ```
 
-If the models are missing, rebuild the Ollama image:
+If the models are missing, inspect the provisioning logs:
 
 ```powershell
-docker compose build --no-cache ollama
+docker compose logs --no-color ollama-init
+```
+
+Then restart the stack:
+
+```powershell
 docker compose up -d
 ```
 
 </details>
 
 <details>
-<summary><strong>Ollama fails during image build</strong></summary>
+<summary><strong>Ollama model provisioning fails</strong></summary>
 
-Model provisioning requires network access during the Docker image build.
+Model provisioning requires Internet access from the `ollama-init` service.
 
-Retry the Ollama image build:
+Check the provisioning logs:
 
 ```powershell
-docker compose build --no-cache ollama
+docker compose logs --no-color ollama-init
 ```
 
 Then start the stack:
@@ -942,9 +984,11 @@ docker compose logs --no-color ollama
 <details>
 <summary><strong>First startup is slow</strong></summary>
 
-The first `docker compose build` can take longer because the required Ollama models are downloaded and packaged into the Ollama image.
+The first `docker compose up -d` can take longer because `ollama-init` downloads the required Ollama models.
 
-Subsequent `docker compose up -d` operations do not need to download the models again.
+The Docker image build does not download the models.
+
+Subsequent starts reuse the existing `ollama_models` volume and do not need to download the models again.
 
 </details>
 
