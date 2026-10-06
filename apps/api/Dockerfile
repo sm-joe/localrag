@@ -1,29 +1,41 @@
+# syntax=docker/dockerfile:1.7
+
 FROM python:3.14-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    PYTHONPATH=/app
+    PYTHONPATH=/app \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
 
 WORKDIR /app
 
+# System dependencies
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        libpcre2-8-0=10.46-1~deb13u3 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Python dependencies in a cacheable layer.
 COPY requirements.txt .
 
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends libpcre2-8-0=10.46-1~deb13u3 \
-    && rm -rf /var/lib/apt/lists/* \
-    && pip install --no-cache-dir -r requirements.txt \
-    && groupadd --gid 10001 localrag \
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --no-cache-dir -r requirements.txt
+
+# Create non-root user.
+RUN groupadd --gid 10001 localrag \
     && useradd \
         --uid 10001 \
         --gid 10001 \
         --no-create-home \
         --shell /usr/sbin/nologin \
-        localrag \
-    && chown -R 10001:10001 /app
+        localrag
 
+# Copy application after dependencies so source changes don't
+# invalidate the dependency layer.
 COPY --chown=10001:10001 app ./app
 COPY --chown=10001:10001 tests ./tests
 
+# Remove pip from the final image.
 RUN rm -rf /usr/local/lib/python3.14/site-packages/pip
 
 USER 10001:10001

@@ -1,15 +1,19 @@
+# syntax=docker/dockerfile:1.7
+
 FROM node:22-alpine AS dependencies
 
 WORKDIR /app
 
-COPY package.json ./
+COPY package.json package-lock.json ./
 
-RUN npm install
-
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci
 
 FROM node:22-alpine AS builder
 
 WORKDIR /app
+
+ENV NEXT_TELEMETRY_DISABLED=1
 
 COPY --from=dependencies /app/node_modules ./node_modules
 COPY . .
@@ -19,14 +23,12 @@ RUN mkdir -p public && npm run build
 
 FROM node:22-alpine AS runner
 
-RUN npm install -g npm@latest && npm cache clean --force \
-    && rm -rf /usr/local/lib/node_modules/npm \
-    && rm -f /usr/local/bin/npm /usr/local/bin/npx
-
 WORKDIR /app
 
-ENV NODE_ENV=production
+ENV NODE_ENV=production \
+    NEXT_TELEMETRY_DISABLED=1
 
+# Create non-root user and remove npm/npx from runtime image.
 RUN addgroup \
         --system \
         --gid 10001 \
@@ -36,8 +38,12 @@ RUN addgroup \
         --uid 10001 \
         --ingroup localrag \
         --no-create-home \
-        localrag
+        localrag \
+    && rm -rf /usr/local/lib/node_modules/npm \
+    && rm -f /usr/local/bin/npm \
+            /usr/local/bin/npx
 
+# Copy only the files required to run Next.js standalone output.
 COPY --from=builder --chown=10001:10001 /app/public ./public
 COPY --from=builder --chown=10001:10001 /app/.next/standalone ./
 COPY --from=builder --chown=10001:10001 /app/.next/static ./.next/static
