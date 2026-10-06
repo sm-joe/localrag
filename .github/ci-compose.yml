@@ -5,9 +5,9 @@ services:
     volumes:
       - qdrant-ci-data:/qdrant/storage
 
-ollama-init:
-  networks:
-    - ollama-egress
+  ollama-init:
+    networks:
+      - ollama-egress
 
   ollama:
     environment:
