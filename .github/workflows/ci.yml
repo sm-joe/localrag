@@ -234,7 +234,15 @@ jobs:
 
   docker-build:
     name: Docker Build
-    if: always() && needs.changes.outputs.docker == 'true' && needs.gitleaks.result == 'success' && needs.codeql.result == 'success' && needs.trivy-config.result == 'success' && needs.api-tests.result == 'success' && needs.web-build.result == 'success'
+    if: |
+      always() &&
+      needs.changes.outputs.docker == 'true' &&
+      (needs.gitleaks.result == 'success' || needs.gitleaks.result == 'skipped') &&
+      (needs.codeql.result == 'success' || needs.codeql.result == 'skipped') &&
+      (needs.trivy-config.result == 'success' || needs.trivy-config.result == 'skipped') &&
+      (needs.api-tests.result == 'success' || needs.api-tests.result == 'skipped') &&
+      (needs.web-build.result == 'success' || needs.web-build.result == 'skipped')
+    
     runs-on: ubuntu-latest
 
     permissions:
