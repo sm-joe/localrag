@@ -45,6 +45,7 @@ jobs:
               - 'apps/web/package.json'
               - 'apps/web/package-lock.json'
               - 'apps/web/**'
+              - 'ollama/**'
               - 'docker-compose.yml'
               - '.github/ci-compose.yml'
 
