@@ -24,3 +24,6 @@ RUN set -eux; \
 ENTRYPOINT ["ollama"]
 
 CMD ["serve"]
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+    CMD ollama list >/dev/null 2>&1 || exit 1
