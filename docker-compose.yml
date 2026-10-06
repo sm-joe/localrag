@@ -68,17 +68,20 @@ services:
       start_period: 10s
 
   ollama:
-    image: ollama/ollama:latest
+    build:
+      context: ./ollama
     container_name: localrag-ollama
     restart: unless-stopped
+    environment:
+      OLLAMA_HOST: 0.0.0.0:11434
+      OLLAMA_MODELS: /opt/ollama-models
+      OLLAMA_ORIGINS: "*"
+    networks:
+      - backend
     security_opt:
       - no-new-privileges:true
     cap_drop:
       - ALL
-    volumes:
-      - ./data/ollama:/root/.ollama
-    networks:
-      - backend
 
 networks:
   frontend:
@@ -87,3 +90,6 @@ networks:
   backend:
     driver: bridge
     internal: true
+
+volumes:
+  qdrant_data:

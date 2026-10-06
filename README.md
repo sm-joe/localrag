@@ -283,6 +283,8 @@ cd localrag
 docker compose build
 ```
 
+The build also provisions the required Ollama models into the Ollama image. No manual model download is required.
+
 ## 3. Start
 
 ```powershell
@@ -329,26 +331,19 @@ LLM_MODEL=llama3.2:3b
 EMBEDDING_MODEL=nomic-embed-text
 ```
 
-Check installed models:
+The required Ollama models are **provisioned into the LocalRAG Ollama image during `docker compose build`**.
+
+You do **not** need to install Ollama on the host or manually run `ollama pull`.
+
+After the image has been built, verify the available models with:
 
 ```powershell
 docker compose exec ollama ollama list
 ```
 
-Pull the models if necessary:
+The runtime Ollama container does not need Internet access to obtain the required models.
 
-```powershell
-docker compose exec ollama ollama pull llama3.2:3b
-docker compose exec ollama ollama pull nomic-embed-text
-```
-
-Verify:
-
-```powershell
-docker compose exec ollama ollama list
-```
-
-The first model download requires network access. Models are persisted in the local Ollama data directory.
+> The initial `docker compose build` requires network access because the required model artifacts are downloaded while the Ollama image is built. Subsequent container starts use the models already packaged in the image.
 
 ---
 
@@ -631,6 +626,8 @@ localrag/
 ├── data/
 ├── evals/
 ├── deploy/
+├── ollama/
+│   └── Dockerfile
 ├── tests/
 │
 ├── .github/
@@ -682,16 +679,17 @@ Do not commit `.env`, `.env.local`, credentials, private keys, or other secrets.
 
 LocalRAG persists application data through Docker volumes / bind mounts.
 
-Typical local data includes:
+Typical local application data includes:
 
 ```text
 data/
 ├── documents/
-├── qdrant/
-└── ollama/
+└── qdrant/
 ```
 
-Treat these directories as application state.
+The required Ollama models are packaged into the Ollama container image rather than stored in the application data directory.
+
+Treat the Qdrant and document directories as application state.
 
 To remove containers and persistent Compose volumes:
 
@@ -917,17 +915,44 @@ The browser should access the API through the locally published API endpoint rat
 <details>
 <summary><strong>Ollama has no models</strong></summary>
 
-List models:
+The required models are provisioned when the Ollama image is built.
+
+Check the models:
 
 ```powershell
 docker compose exec ollama ollama list
 ```
 
-Pull the required models:
+If the models are missing, rebuild the Ollama image:
 
 ```powershell
-docker compose exec ollama ollama pull llama3.2:3b
-docker compose exec ollama ollama pull nomic-embed-text
+docker compose build --no-cache ollama
+docker compose up -d
+```
+
+</details>
+
+<details>
+<summary><strong>Ollama fails during image build</strong></summary>
+
+Model provisioning requires network access during the Docker image build.
+
+Retry the Ollama image build:
+
+```powershell
+docker compose build --no-cache ollama
+```
+
+Then start the stack:
+
+```powershell
+docker compose up -d
+```
+
+Check the build/runtime logs if the problem persists:
+
+```powershell
+docker compose logs --no-color ollama
 ```
 
 </details>
@@ -935,15 +960,9 @@ docker compose exec ollama ollama pull nomic-embed-text
 <details>
 <summary><strong>First startup is slow</strong></summary>
 
-The first startup may take longer because models need to be downloaded and initialized.
+The first `docker compose build` can take longer because the required Ollama models are downloaded and packaged into the Ollama image.
 
-Check:
-
-```powershell
-docker compose logs -f ollama
-```
-
-Once models are stored locally, subsequent starts should not need to download them again.
+Subsequent `docker compose up -d` operations do not need to download the models again.
 
 </details>
 
