@@ -54,31 +54,40 @@ class IngestionService:
             path
         )
 
-        existing_document = (
-            self.vector_store.find_document_by_hash(
-                document_hash
-            )
-        )
-
         filename = (
             original_filename
             if original_filename
             else path.name
         )
 
-        if self._is_existing_document(
-            existing_document
-        ):
-            return IngestionResult(
-                document_id=existing_document[
-                    "document_id"
-                ],
-                filename=existing_document[
-                    "filename"
-                ],
-                chunks=0,
-                already_indexed=True,
+        collections = self.vector_store.client.get_collections()
+
+        collection_exists = any(
+            collection.name
+            == self.vector_store.collection_name
+            for collection in collections.collections
+        )
+
+        if collection_exists:
+            existing_document = (
+                self.vector_store.find_document_by_hash(
+                    document_hash
+                )
             )
+
+            if self._is_existing_document(
+                existing_document
+            ):
+                return IngestionResult(
+                    document_id=existing_document[
+                        "document_id"
+                    ],
+                    filename=existing_document[
+                        "filename"
+                    ],
+                    chunks=0,
+                    already_indexed=True,
+                )
 
         parsed = parse_document(
             path,
