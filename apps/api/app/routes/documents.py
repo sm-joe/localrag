@@ -349,6 +349,19 @@ async def upload_document(
 def list_documents() -> DocumentListResponse:
     try:
         vector_store = create_vector_store()
+        settings = get_settings()
+
+        collections = vector_store.client.get_collections()
+
+        collection_exists = any(
+            collection.name == settings.qdrant_collection
+            for collection in collections.collections
+        )
+
+        if not collection_exists:
+            return DocumentListResponse(
+                documents=[]
+            )
 
         points = vector_store.list_points(
             limit=1000,
